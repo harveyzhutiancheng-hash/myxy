@@ -1,0 +1,43 @@
+name: 打包 Windows 安装包
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:   # 支持手动触发
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: 拉取代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 安装依赖
+        run: pip install pyautogui keyboard pynput pyinstaller
+
+      - name: PyInstaller 打包
+        run: |
+          pyinstaller --onefile --windowed `
+            --name "梦幻日常助手" `
+            --hidden-import pynput.keyboard._win32 `
+            --hidden-import pynput.mouse._win32 `
+            mhxy_app.py
+
+      - name: 安装 Inno Setup
+        run: choco install innosetup -y
+
+      - name: 制作安装包
+        run: '& "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" setup.iss'
+
+      - name: 上传安装包
+        uses: actions/upload-artifact@v4
+        with:
+          name: 梦幻日常助手_安装包
+          path: Output\梦幻日常助手_安装包.exe
+          retention-days: 30
